@@ -34,7 +34,7 @@ public:
 
 private:
     // Сам объект базы данных, с которым будет производиться работа
-    QSqlDatabase db;
+    static QSqlDatabase db;
 
     // Внутренние методы для работы с базой данных
     bool openDataBase();
