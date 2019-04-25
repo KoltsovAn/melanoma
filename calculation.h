@@ -35,8 +35,7 @@ signals:
     void progres();
     void finish();
 private:
-    void atThread(int from, int to); //костыль для запуска потоков
-    void calculator(const QString &path); //выполняет всю работу с изображением
+    void calculator(int from, int to); //выполняет всю работу с изображением
     int definitionTresholdBinarization(std::shared_ptr<QImage> img); //автоматическое определение порога бинаризации
     void binarization(std::shared_ptr<QImage> img, int treshold); //бинаризация
     objectDescription &&calculateAttribute(std::shared_ptr<QImage> img); //расчет признаков

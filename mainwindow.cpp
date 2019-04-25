@@ -33,7 +33,8 @@ void MainWindow::on_pushButton_clicked()
         return;
     QDir d(dir);
     d.setFilter(QDir::Files);
-    QStringList fileList=d.entryList(QStringList()<<"*.bmp"<<"*.jpg", QDir::Files | QDir::NoSymLinks, QDir::Name);
+    QStringList fileList=d.entryList(QStringList() << "*.bmp" << "*.jpg",
+                                     QDir::Files | QDir::NoSymLinks, QDir::Name);
     for(auto &fileName: fileList)
         fileName = dir + "/" + fileName;
     calculation calculator(fileList);

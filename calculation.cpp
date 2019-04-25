@@ -18,13 +18,12 @@ void calculation::startCalculation()
 {
     int maxThread = std::thread::hardware_concurrency() - 1;
     if (maxThread < 2)
-        for (auto &file: path)
-            calculator(file);
+        calculator(0, path.size());
     else {
         std::vector<std::thread> threads;
         int step = (path.size() / maxThread) + 1;
         for (int i = 0; i < maxThread; i++)
-            threads.push_back(std::thread(&calculation::atThread, this, i * step, step * (i + 1)));
+            threads.push_back(std::thread(&calculation::calculator, this, i * step, step * (i + 1)));
         for (size_t i = 0; i < threads.size(); i++)
             threads.at(i).join();
             //emit progres();
@@ -37,19 +36,15 @@ std::vector<objectDescription> &&calculation::getObjects()
     return std::move(objects);
 }
 
-void calculation::atThread(int from, int to)
+void calculation::calculator(int from, int to)
 {
-    for (int i = from; i < to && i < path.size(); i++)
-        calculator(path.at(i));
-}
-
-void calculation::calculator(const QString &path)
-{
-    std::shared_ptr<QImage> img = std::make_shared<QImage>(path);
-    binarization(img, definitionTresholdBinarization(img));
-    objectDescription object = calculateAttribute(img);
-    std::lock_guard<std::mutex> lock(mutInsertObject);
-    objects.push_back(std::move(object));
+    for (int i = from; i < to && i < path.size(); i++) {
+        std::shared_ptr<QImage> img = std::make_shared<QImage>(path.at(i));
+        binarization(img, definitionTresholdBinarization(img));
+        objectDescription object = calculateAttribute(img);
+        std::lock_guard<std::mutex> lock(mutInsertObject);
+        objects.push_back(std::move(object));
+    }
 }
 
 int calculation::definitionTresholdBinarization(std::shared_ptr<QImage> img)
