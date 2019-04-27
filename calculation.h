@@ -29,16 +29,18 @@ public:
     ~calculation();
 
     void startCalculation();
+//    std::thread startCalculationThread();
     std::vector<objectDescription> &&getObjects();
 
 signals:
     void progres();
     void finish();
 private:
-    void calculator(int from, int to); //выполняет всю работу с изображением
+    QString getNextFileName();
+    void calculator(QString fileName); //выполняет всю работу с изображением
     int definitionTresholdBinarization(std::shared_ptr<QImage> img); //автоматическое определение порога бинаризации
     void binarization(std::shared_ptr<QImage> img, int treshold); //бинаризация
-    objectDescription &&calculateAttribute(std::shared_ptr<QImage> img); //расчет признаков
+    objectDescription calculateAttribute(std::shared_ptr<QImage> img); //расчет признаков
     bool region(std::shared_ptr<QImage> file, int x, int y); //проверка является ли пиксель граничным
 };
 

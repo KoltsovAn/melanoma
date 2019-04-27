@@ -9,6 +9,7 @@ struct objectDescription {
     ASM_G = 0.0, CON_G = 0.0, ENT_G = 0.0, LUN_G = 0.0, MPR_G = 0.0, // LUN - Локальная однородность, ENT - Энтропия
     ASM_B = 0.0, CON_B = 0.0, ENT_B = 0.0, LUN_B = 0.0, MPR_B = 0.0, // ASM - Энергия 
     ASM_L = 0.0, CON_L = 0.0, ENT_L = 0.0, LUN_L = 0.0, MPR_L = 0.0; // для модели RGB и яркости(L) 
+    unsigned int type = 99;
 };
 
 #endif // OBJECTDESCRIPTION_H

@@ -1,6 +1,7 @@
 #include "calculation.h"
 
 #include <QDebug>
+#include <QTime>
 
 const QColor notObjectPixel = Qt::white;
 
@@ -16,34 +17,49 @@ calculation::~calculation()
 
 void calculation::startCalculation()
 {
-    int maxThread = std::thread::hardware_concurrency() - 1;
+    size_t maxThread = std::thread::hardware_concurrency() - 1;
+    objects.reserve(path.size());
     if (maxThread < 2)
-        calculator(0, path.size());
+        calculator(getNextFileName());
     else {
         std::vector<std::thread> threads;
-        int step = (path.size() / maxThread) + 1;
-        for (int i = 0; i < maxThread; i++)
-            threads.push_back(std::thread(&calculation::calculator, this, i * step, step * (i + 1)));
+        for (size_t i = 0; i < maxThread; i++)
+            threads.push_back(std::thread(&calculation::calculator, this, getNextFileName()));
         for (size_t i = 0; i < threads.size(); i++)
             threads.at(i).join();
-            //emit progres();
     }
     emit finish();
 }
+
+//std::thread calculation::startCalculationThread()
+//{
+//    return std::thread([&]{startCalculation();});
+//}
 
 std::vector<objectDescription> &&calculation::getObjects()
 {
     return std::move(objects);
 }
 
-void calculation::calculator(int from, int to)
+QString calculation::getNextFileName()
 {
-    for (int i = from; i < to && i < path.size(); i++) {
-        std::shared_ptr<QImage> img = std::make_shared<QImage>(path.at(i));
+    if (path.isEmpty())
+        return "";
+    QString ret = path.first();
+    path.pop_front();
+    return ret;
+}
+
+void calculation::calculator(QString fileName)
+{
+    while (fileName != "") {
+        std::shared_ptr<QImage> img = std::make_shared<QImage>(fileName);
         binarization(img, definitionTresholdBinarization(img));
         objectDescription object = calculateAttribute(img);
         std::lock_guard<std::mutex> lock(mutInsertObject);
         objects.push_back(std::move(object));
+        emit progres();
+        fileName = getNextFileName();
     }
 }
 
@@ -93,7 +109,7 @@ void calculation::binarization(std::shared_ptr<QImage> img, int treshold)
     }
 }
 
-objectDescription &&calculation::calculateAttribute(std::shared_ptr<QImage> img)
+objectDescription calculation::calculateAttribute(std::shared_ptr<QImage> img)
 {
     objectDescription object;
     std::vector< std::vector <double> > GR(256, std::vector <double>(256,0.0));
@@ -177,7 +193,7 @@ objectDescription &&calculation::calculateAttribute(std::shared_ptr<QImage> img)
     }
     object.IMM = iMin / iMax;
     object.D = iMax + iMin;
-    return std::move(object);
+    return object;
 }
 
 bool calculation::region(std::shared_ptr<QImage> file, int x, int y)

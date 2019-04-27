@@ -1,6 +1,18 @@
 #include "database.h"
 #include <QDebug>
 
+
+const std::list<QString> typeMarkerName = {"K", "S", "Sat", "H", "IMM", "D",
+                                           "ASM_R", "CON_R", "ENT_R", "LUN_R", "MPR_R",
+                                           "ASM_G", "CON_G", "ENT_G", "LUN_G", "MPR_G",
+                                           "ASM_B", "CON_B", "ENT_B", "LUN_B", "MPR_B",
+                                           "ASM_L", "CON_L", "ENT_L", "LUN_L", "MPR_L"};
+
+QSqlDatabase database::db = QSqlDatabase::addDatabase("QSQLITE");// ебучая магия
+                                                                 // т.к. переменная статик нужно определить ее место в памяти
+                                                                 // автоматом это не делается так что руками вот такая херня
+// читать: https://stackoverflow.com/questions/9110487/undefined-reference-to-a-static-member
+
 database::database(QObject *parent) : QObject(parent)
 {
     this->connectToDataBase();
@@ -50,12 +62,95 @@ void database::insertTrainSample(std::vector<objectDescription> &objects, int ty
         }
 }
 
+size_t database::getCountMark()
+{
+    return  typeMarkerName.size();
+}
+
+bool database::clearingBaecSetting()
+{
+    QSqlQuery query;
+    if (!query.exec("DELETE FROM " TABLE_BAESSETTING)) {
+        qDebug() << "Database: error of clearing probability";
+        qDebug() << query.lastError().text();
+        return false;
+    }
+    if (!query.exec("UPDATE SQLITE_SEQUENCE SET SEQ = '0' WHERE NAME = '" TABLE_BAESSETTING "'")){
+        qDebug() << "Database: error of updating table probability";
+        qDebug() << query.lastError().text();
+        return false;
+    }
+    return true;
+}
+
+std::vector<std::vector<double> > &&database::getTrainSample(size_t id)
+{
+    QSqlQuery query;
+    if(!query.exec("SELECT * FROM " TABLE_TRAINSAMPLE " WHERE Type = " +QString::number(id))){
+        qDebug() << "Database: error of get train sample for id: " << id;
+        qDebug() << query.lastError().text();
+        return std::move(std::vector<std::vector<double> >());
+    }
+    std::vector<std::vector<double> > data;
+    while (query.next()) {
+        std::vector<double> atr;
+        for (size_t i = 2; i < getCountMark() + 2; i++) {
+            atr.push_back(query.value(i).toDouble());
+        }
+        data.push_back(atr);
+    }
+    return std::move(data);
+}
+
+bool database::insertBaesSetting(size_t idType, size_t idMark, double from, double to, double val)
+{
+    QSqlQuery query;
+
+    if(!query.exec("INSERT INTO " TABLE_BAESSETTING " (Type, id_" TABLE_TYPEMARK ","
+                   "FirstPoint, SecondPoint, Value) VALUES ('" + QString::number(idType) + "', "
+                   "'" + QString::number(idMark) + "', '" + QString::number(from) + "', "
+                   "'" + QString::number(to) + "', '" + QString::number(val) + "')")) {
+        qDebug() << "Database: error of insert probability in the interval from: " << from << " to: " << to;
+        qDebug() << query.lastError().text();
+        return false;
+    }
+    return true;
+}
+
+double database::getProbabilty(size_t idType, int idMark, double x)
+{
+    QSqlQuery query;
+    if (!query.exec("SELECT Value FROM " TABLE_BAESSETTING " WHERE Type = " + QString::number(idType) + " "
+                    "AND id_" TABLE_TYPEMARK " = " + QString::number(idMark) + " AND FirstPoint <= " + QString::number(x) + " "
+                    "AND SecondPoint >= " + QString::number(x))) {
+        qDebug() << "Database: error of get probability for type cell: " << idType << " , mark: " << idMark <<
+                    " , position" << x;
+        qDebug() << query.lastError().text();
+        return 0.0;
+    }
+    double prob = 0.0;
+    while (query.next()) {
+        prob = query.value(0).toDouble();
+    }
+    return prob;
+}
+
+bool database::initialTableMark()
+{
+    QSqlQuery query;
+    for (auto &mark: typeMarkerName)
+        if(!query.exec("INSERT INTO " TABLE_TYPEMARK " (Name) VALUES ('" + mark + "')")){
+            qDebug() << query.lastError();
+        }
+    return true;
+}
+
 bool database::openDataBase()
 {
     /* База данных открывается по заданному пути
      * и имени базы данных, если она существует
      * */
-    db = QSqlDatabase::addDatabase("QSQLITE");
+    //db = QSqlDatabase::addDatabase("QSQLITE");
     db.setHostName(DATABASE_HOSTNAME);
     db.setDatabaseName(".\\" DATABASE_NAME);
     if(db.open()){
@@ -120,5 +215,26 @@ bool database::createTable()
         qDebug() << query.lastError().text();
         return false;
     }
+    if(!query.exec( "CREATE TABLE " TABLE_TYPEMARK " ("                     //таблица признак
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    "Name VARCHAR(64) NOT NULL"
+                    ");")){
+        qDebug() << "Database: error of create " << TABLE_TYPEMARK;
+        qDebug() << query.lastError().text();
+        return false;
+    }
+    if(!query.exec( "CREATE TABLE " TABLE_BAESSETTING " ("        //таблица вероятность попадания в интервал
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    "Type TINYINT NOT NULL,"
+                    "id_" TABLE_TYPEMARK " INTEGER NOT NULL,"
+                    "FirstPoint DOBLE,"
+                    "SecondPoint DOUBLE,"
+                    "Value DOBLE"
+                    ");")){
+        qDebug() << "Database: error of create " << TABLE_BAESSETTING;
+        qDebug() << query.lastError().text();
+        return false;
+    }
+    initialTableMark();
     return true;
 }
