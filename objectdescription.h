@@ -10,6 +10,7 @@ struct objectDescription {
     ASM_B = 0.0, CON_B = 0.0, ENT_B = 0.0, LUN_B = 0.0, MPR_B = 0.0, // ASM - Энергия 
     ASM_L = 0.0, CON_L = 0.0, ENT_L = 0.0, LUN_L = 0.0, MPR_L = 0.0; // для модели RGB и яркости(L) 
     unsigned int type = 99;
+    QString fileName;
 };
 
 #endif // OBJECTDESCRIPTION_H

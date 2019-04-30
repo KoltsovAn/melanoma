@@ -31,7 +31,7 @@ public:
 
     size_t getCountMark();// получаем количество признаков
     bool clearingBaecSetting();// удаление настроек баесовского классификатора
-    std::vector<std::vector<double> > &&getTrainSample(size_t id);// получаем обучающую выборку для определенного типа
+    std::vector<std::vector<double> > getTrainSample(size_t id);// получаем обучающую выборку для определенного типа
     bool insertBaesSetting(size_t idType, size_t idMark, double from, double to, double val);// заполнение таблицы настройки баесовского классификатора
     double getProbabilty(size_t idType, int idMark, double x);
 

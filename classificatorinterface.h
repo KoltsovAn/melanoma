@@ -18,6 +18,9 @@ protected:
     QStringList filePath;
     std::vector<objectDescription> objects;
 public:
+    classificatorInterface(QObject *parent = nullptr) : QObject(parent) {
+        db = std::make_unique<database>();
+    }
     classificatorInterface(QStringList &path, QObject *parent = nullptr) : QObject(parent), filePath(path) {
         db = std::make_unique<database>();
     }
@@ -25,6 +28,8 @@ public:
 
     virtual void startTrain() {}
     virtual void startTest() {}
+
+    virtual size_t getTrainCount() {return 0;}
 
     std::vector<objectDescription> getObjects() {
         return std::move(objects);

@@ -56,6 +56,7 @@ void calculation::calculator(QString fileName)
         std::shared_ptr<QImage> img = std::make_shared<QImage>(fileName);
         binarization(img, definitionTresholdBinarization(img));
         objectDescription object = calculateAttribute(img);
+        object.fileName = fileName;
         std::lock_guard<std::mutex> lock(mutInsertObject);
         objects.push_back(std::move(object));
         emit progres();

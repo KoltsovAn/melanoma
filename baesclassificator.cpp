@@ -1,4 +1,13 @@
 #include "baesclassificator.h"
+#include <QDebug>
+
+const size_t divider = 50;
+const size_t countType = 2;
+
+baesClassificator::baesClassificator() : classificatorInterface ()
+{
+
+}
 
 baesClassificator::baesClassificator(QStringList &path) : classificatorInterface (path)
 {
@@ -13,7 +22,7 @@ baesClassificator::~baesClassificator()
 void baesClassificator::startTrain()
 {
     db->clearingBaecSetting();
-    for (size_t i = 0; i < 2; i++) {
+    for (size_t i = 0; i < countType; i++) {
         std::vector<std::vector<double> > data = db->getTrainSample(i);
         for (size_t j = 0; j < db->getCountMark(); j++) {
             double max = std::max_element(data.begin(), data.end(),
@@ -23,17 +32,19 @@ void baesClassificator::startTrain()
             double min = std::min_element(data.begin(), data.end(),
                                           [=](const std::vector<double> &a, const std::vector<double> &b) {
                                             return (a.at(j) < b.at(j));})->at(j);
-            qreal step = (std::abs(max - min)/100);
-            int n = 0;
+            double step = (std::abs(max - min) / divider);
+            int n = 1;
             for (double x = min; x < max; x += step) {
                 for (auto &cell : data)
-                    if (std::abs(cell.at(j) - x) < step)
+                    if (x <= cell.at(j) && cell.at(j) < x + step)
                         ++n;
                 db->insertBaesSetting(i, j + 1, x, x + step, 1.0 * n / data.size());
-                n = 0;
+                n = 1;
+                emit progres();
             }
         }
     }
+    emit finish();
 }
 
 void baesClassificator::startTest()
@@ -44,7 +55,7 @@ void baesClassificator::startTest()
     for(auto &obj: objects) {
         double probabilityClass = 0.0;
         size_t idClass = 0;
-        for (size_t i = 0; i < 2; i++) {
+        for (size_t i = 0; i < countType; i++) {
             double probability = 0.5;
             probability *= db->getProbabilty(i, 1, obj.K);
             probability *= db->getProbabilty(i, 2, obj.S);
@@ -78,5 +89,12 @@ void baesClassificator::startTest()
             }
         }
         obj.type = idClass;
+        emit progres();
     }
+    emit finish();
+}
+
+size_t baesClassificator::getTrainCount()
+{
+    return db->getCountMark() * countType * divider + db->getCountMark();
 }

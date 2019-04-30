@@ -43,7 +43,7 @@ void database::insertTrainSample(std::vector<objectDescription> &objects, int ty
                        "ASM_R, CON_R, ENT_R, LUN_R, MPR_R, "
                        "ASM_G, CON_G, ENT_G, LUN_G, MPR_G,"
                        "ASM_B, CON_B, ENT_B, LUN_B, MPR_B,"
-                       "ASM_L, CON_L, ENT_L, LUN_L, MPR_L) VALUES ('" + QString::number(type) + "',"
+                       "ASM_L, CON_L, ENT_L, LUN_L, MPR_L, filename) VALUES ('" + QString::number(type) + "',"
                        "'" + QString::number(object.K) + "', '" + QString::number(object.S) + "',"
                        "'" + QString::number(object.Sat) + "', '" + QString::number(object.H) + "',"
                        "'" + QString::number(object.IMM) + "', '" + QString::number(object.D) + "',"
@@ -56,7 +56,8 @@ void database::insertTrainSample(std::vector<objectDescription> &objects, int ty
                        "'" + QString::number(object.ENT_B) + "', '" + QString::number(object.LUN_B) + "',"
                        "'" + QString::number(object.MPR_B) + "', '" + QString::number(object.ASM_L) + "',"
                        "'" + QString::number(object.CON_L) + "', '" + QString::number(object.ENT_L) + "',"
-                       "'" + QString::number(object.LUN_L) + "', '" + QString::number(object.MPR_L) + "')")){
+                       "'" + QString::number(object.LUN_L) + "', '" + QString::number(object.MPR_L) + "',"
+                       "'" + object.fileName + "')")){
             qDebug() << "Database: error of incert cell in train sample table";
             qDebug() << query.lastError().text();
         }
@@ -83,13 +84,13 @@ bool database::clearingBaecSetting()
     return true;
 }
 
-std::vector<std::vector<double> > &&database::getTrainSample(size_t id)
+std::vector<std::vector<double> > database::getTrainSample(size_t id)
 {
     QSqlQuery query;
     if(!query.exec("SELECT * FROM " TABLE_TRAINSAMPLE " WHERE Type = " +QString::number(id))){
         qDebug() << "Database: error of get train sample for id: " << id;
         qDebug() << query.lastError().text();
-        return std::move(std::vector<std::vector<double> >());
+        return std::vector<std::vector<double> >();
     }
     std::vector<std::vector<double> > data;
     while (query.next()) {
@@ -99,7 +100,7 @@ std::vector<std::vector<double> > &&database::getTrainSample(size_t id)
         }
         data.push_back(atr);
     }
-    return std::move(data);
+    return data;
 }
 
 bool database::insertBaesSetting(size_t idType, size_t idMark, double from, double to, double val)
@@ -183,34 +184,35 @@ bool database::createTable()
 {
     QSqlQuery query;
     if (!query.exec( "CREATE TABLE " TABLE_TRAINSAMPLE " ("                     //таблица обучающей выборки
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-                    "Type TINYINT  NOT NULL,"
-                    "K DOUBLE,"
-                    "S DOUBLE,"
-                    "Sat DOUBLE,"
-                    "H DOUBLE,"
-                    "IMM DOUBLE,"
-                    "D DOUBLE,"
-                    "ASM_R DOUBLE,"
-                    "CON_R DOUBLE,"
-                    "ENT_R DOUBLE,"
-                    "LUN_R DOUBLE,"
-                    "MPR_R DOUBLE,"
-                    "ASM_G DOUBLE,"
-                    "CON_G DOUBLE,"
-                    "ENT_G DOUBLE,"
-                    "LUN_G DOUBLE,"
-                    "MPR_G DOUBLE,"
-                    "ASM_B DOUBLE,"
-                    "CON_B DOUBLE,"
-                    "ENT_B DOUBLE,"
-                    "LUN_B DOUBLE,"
-                    "MPR_B DOUBLE,"
-                    "ASM_L DOUBLE,"
-                    "CON_L DOUBLE,"
-                    "ENT_L DOUBLE,"
-                    "LUN_L DOUBLE,"
-                    "MPR_L DOUBLE);")) {
+                     "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                     "Type TINYINT  NOT NULL,"
+                     "K DOUBLE,"
+                     "S DOUBLE,"
+                     "Sat DOUBLE,"
+                     "H DOUBLE,"
+                     "IMM DOUBLE,"
+                     "D DOUBLE,"
+                     "ASM_R DOUBLE,"
+                     "CON_R DOUBLE,"
+                     "ENT_R DOUBLE,"
+                     "LUN_R DOUBLE,"
+                     "MPR_R DOUBLE,"
+                     "ASM_G DOUBLE,"
+                     "CON_G DOUBLE,"
+                     "ENT_G DOUBLE,"
+                     "LUN_G DOUBLE,"
+                     "MPR_G DOUBLE,"
+                     "ASM_B DOUBLE,"
+                     "CON_B DOUBLE,"
+                     "ENT_B DOUBLE,"
+                     "LUN_B DOUBLE,"
+                     "MPR_B DOUBLE,"
+                     "ASM_L DOUBLE,"
+                     "CON_L DOUBLE,"
+                     "ENT_L DOUBLE,"
+                     "LUN_L DOUBLE,"
+                     "MPR_L DOUBLE,"
+                     "filename VARCHAR(256));")) {
         qDebug() << "Database: error of create " << TABLE_TRAINSAMPLE;
         qDebug() << query.lastError().text();
         return false;
